@@ -61,7 +61,7 @@ public class Game extends Grid {
 	void setBombs() {
 		for (int y = 1; y <  height; y++) {
 			for (int x = 1; x <  width; x++) {
-				if (Math.floor(Math.random() * 17) == 0) {
+				if (Math.floor(Math.random() * 14) == 0) {
 					grid[x][y] = -1;
 				}
 			}
