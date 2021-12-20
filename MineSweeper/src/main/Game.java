@@ -2,23 +2,38 @@ package main;
 import processing.core.*;
 
 public class Game extends Grid {
+	//Used to track which portions of grid are hidden.
 	GridStatus[][] hidden;
+	//Only used as first move must show multiple blocks and not just one.
 	int moves = 0;
+	//density of bombs; lower the number, higher the density.
+	int bombDensity = 14;
+	//Status of win or lost, which is used for win and lose animations.
 	boolean lost = false;
 	boolean won = false;
+	//Only used for when game is one to produce flashing effect.
 	GridStatus cycle = GridStatus.UNHIDDEN;
+	
+	//Constructor, PApplet main is passed to Grid to gain access to processing draw methods.
 	Game(PApplet main, int width, int height, int size) {
 		super(main, width, height, size);
 		reset();
 	}
 	
+	
+	//---------------------------DISPLAY-----------------------------//
+	
+	//Displays grid (Called from Main.draw())
 	void display() {
+		//Shows border of each cell (Method of Grid.)
 		showGridLines(80);
+		//Displays itterates through each cell in grid.
 		for (int y = 1; y <  height; y++) {
 			for (int x = 1; x <  width; x++) {
 				show(x, y);
 			}
 		}
+		//Only active if one, causes the bombs to flash red and green indicating win.
 		if (won) {
 			main.frameRate(5);
 			for (int y = 1; y <  height; y++) {
@@ -32,9 +47,12 @@ public class Game extends Grid {
 		}
 	}
 	
+	//Used to display grid depending on state.
 	void show(int x, int y) {
+		//currX and currY are subtracted by one as true grid position is one less as there is one buffer index.
 		int currX = x-1;
 		int currY = y-1;
+		//Displays grid depending on grid status, and hidden status. (-1 = bomb, 0 = free, > 0 = bomb count.)
 		if (hidden[x][y] == GridStatus.UNHIDDEN) {
 			if (grid[x][y] == -1) {
 				main.fill(255, 0, 0);
@@ -58,10 +76,38 @@ public class Game extends Grid {
 		}
 	}
 	
+	//Shows multiple blocks, in a random range of radius 2 or 5.
+	private void showMultiple(int xClick, int yClick) {
+		int radius = (int)Math.floor(2 + Math.random() * 5);
+		for(int y = -radius; y <= radius; y++) {
+			for (int x = -radius; x <= radius; x++) {
+				//Used to avoid out of bound indexing.
+				if (yClick + y < 1 || yClick + y > height || xClick + x < 1 || xClick + x > height) continue;
+				//Only displays if current cell is not flagged and is not a bomb.
+				if (grid[xClick + x][yClick + y] != -1 && hidden[xClick + x][yClick + y] != GridStatus.FLAGGED) {
+					hidden[xClick + x][yClick + y] = GridStatus.UNHIDDEN;
+				}
+			}
+		}
+	}
+	
+	//Shows all bombs upon loss.
+	void showBombs() {
+		for (int y = 1; y < height; y++) {
+			for (int x = 1; x < width; x++) {
+				if (grid[x][y] == -1) hidden[x][y] = GridStatus.UNHIDDEN;
+			}
+		}
+	}
+	
+
+	//--------------------------------STATE CHANGES---------------------------//
+	
+	//Sets position of bombs.
 	void setBombs() {
 		for (int y = 1; y <  height; y++) {
 			for (int x = 1; x <  width; x++) {
-				if (Math.floor(Math.random() * 14) == 0) {
+				if (Math.floor(Math.random() * bombDensity) == 0) {
 					grid[x][y] = -1;
 				}
 			}
@@ -69,6 +115,7 @@ public class Game extends Grid {
 		setMarkers();
 	}
 	
+	//Sets numbers marking number of bombs.
 	private void setMarkers() {
 		for(int y = 1; y < height; y++) {
 			for(int x = 1; x < width; x++) {
@@ -86,18 +133,7 @@ public class Game extends Grid {
 		}
 	}
 	
-	private void showMultiple(int xClick, int yClick) {
-		int radius = (int)Math.floor(2 + Math.random() * 5);
-		for(int y = -radius; y <= radius; y++) {
-			for (int x = -radius; x <= radius; x++) {
-				if (yClick + y < 1 || yClick + y > height || xClick + x < 1 || xClick + x > height) continue;
-				if (grid[xClick + x][yClick + y] != -1 && hidden[xClick + x][yClick + y] != GridStatus.FLAGGED) {
-					hidden[xClick + x][yClick + y] = GridStatus.UNHIDDEN;
-				}
-			}
-		}
-	}
-	
+	//Handles click events
 	void clickHandler(int x, int y, MouseEvent button) {
 		if (lost == true || won == true) {reset(); main.frameRate(60); return;}
 		
@@ -127,6 +163,7 @@ public class Game extends Grid {
 		won = checkFinished();
 	}
 	
+	//checks if game has been completed
 	boolean checkFinished() {
 		for(int y = 1; y < height; y++) {
 			for(int x = 1; x < width; x++) {
@@ -138,14 +175,7 @@ public class Game extends Grid {
 		return true;
 	}
 	
-	void showBombs() {
-		for (int y = 1; y < height; y++) {
-			for (int x = 1; x < width; x++) {
-				if (grid[x][y] == -1) hidden[x][y] = GridStatus.UNHIDDEN;
-			}
-		}
-	}
-	
+	//resets game, and is used upon initialisation.
 	void reset() {
 		lost = false; 
 		won = false; 
@@ -160,5 +190,4 @@ public class Game extends Grid {
 		}
 		setBombs();
 	}
-	
 }
